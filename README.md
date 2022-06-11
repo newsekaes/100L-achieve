@@ -32,9 +32,12 @@ Promise API，以及`Promise.all`, `Promise.race` 等
 ## 4. Vue
 
 ### Vue
-响应式与副作用函数
+#### 响应式 和 副作用函数
+代码实现： [code/vue/core/reactive.js](./code/vue/core/reactive.js)  
+使用例子：[example/vue/core/reactive.js](./example/vue/core/reactive.html)
 
 ### vue-router
+
 
 ### vuex
 

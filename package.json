@@ -1,0 +1,35 @@
+{
+  "name": "100l-achieve",
+  "version": "1.0.0",
+  "description": "Complete core functions with 100 lines of code",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "lint-fix": "node node_modules/eslint/bin/eslint.js --fix --ext .js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/newsekaes/100L-achieve.git"
+  },
+  "author": "newsekaes",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/newsekaes/100L-achieve/issues"
+  },
+  "homepage": "https://github.com/newsekaes/100L-achieve#readme",
+  "dependencies": {
+    "jest": "^28.1.1",
+    "jest-environment-jsdom": "^28.1.1",
+    "jsdom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^28.1.1",
+    "eslint": "^8.17.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.2.1",
+    "eslint-plugin-promise": "^6.0.0"
+  },
+  "type": "module"
+}
