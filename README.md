@@ -23,6 +23,7 @@ Promise API，以及`Promise.all`, `Promise.race` 等
 
 ### deepClone
 深拷贝
+代码实现：[code/utils/deepClone.js](./code/utils/deepClone.js)
 
 ## 3. React
 
