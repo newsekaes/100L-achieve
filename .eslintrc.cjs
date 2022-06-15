@@ -12,5 +12,7 @@ module.exports = {
     sourceType: 'module'
   },
   rules: {
+    'no-case-declarations': 0,
+    'no-unmodified-loop-condition': 0
   }
 }

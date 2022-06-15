@@ -36,6 +36,9 @@ Promise API，以及`Promise.all`, `Promise.race` 等
 代码实现： [code/vue/core/reactive.js](./code/vue/core/reactive.js)  
 使用例子：[example/vue/core/reactive.js](./example/vue/core/reactive.html)
 
+#### 模板编译
+代码实现：[code/vue/core/compiler.js](./code/vue/core/compiler.js)
+
 ### vue-router
 
 
@@ -47,3 +50,5 @@ Promise API，以及`Promise.all`, `Promise.race` 等
 
 ## 6. 编译原理
 ### 小型编译器
+
+### 字符串模板
