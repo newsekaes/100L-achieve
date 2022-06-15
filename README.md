@@ -9,6 +9,7 @@ Webpack 的模块定义与模块引用系统
 
 ### Promise
 Promise API，以及`Promise.all`, `Promise.race` 等
+代码实现：[code/polyfill/promise/index.js](./code/polyfill/promise/index.js)
 
 ### Event
 事件监听与订阅分发
