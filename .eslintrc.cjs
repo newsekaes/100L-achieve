@@ -13,6 +13,8 @@ module.exports = {
   },
   rules: {
     'no-case-declarations': 0,
-    'no-unmodified-loop-condition': 0
+    'no-unmodified-loop-condition': 0,
+    'no-new-object': 0,
+    'no-new-func': 0
   }
 }

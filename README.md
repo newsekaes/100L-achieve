@@ -20,6 +20,7 @@ Promise API，以及`Promise.all`, `Promise.race` 等
 
 ### isEqual
 判断严格相当
+代码实现：[code/utils/isEqual.js](./code/utils/isEqual.js)
 
 ### deepClone
 深拷贝

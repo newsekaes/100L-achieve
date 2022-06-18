@@ -49,6 +49,7 @@ function handleFunc (func) {
 function handleNotTravel (target, tag) {
   const TargetConstructor = target.constructor
   switch (tag) {
+    // 针对一些被 Object Wrapper 包装过的基本类型
     case typeToStringMap.Boolean:
       return new Object(Boolean.prototype.valueOf.call(target))
     case typeToStringMap.Number:

@@ -11,7 +11,7 @@ function isAlpha (char) {
   return /[a-z|A-Z]/.test(char)
 }
 
-function tokenize (str) {
+export function tokenize (str) {
   let currentState = State.initial
   const chars = []
   const tokens = []
@@ -93,7 +93,7 @@ function tokenize (str) {
   return tokens
 }
 
-function parse (str) {
+export function parse (str) {
   const tokens = tokenize(str)
   const root = {
     type: 'Root',
@@ -347,7 +347,7 @@ function genArrayExpression (nodes, context) {
 
 function genReturnStatement (node, context) {
   const { push } = context
-  push('return')
+  push('return ')
   genNode(node.return, context)
 }
 
@@ -366,7 +366,7 @@ function genCallExpression (node, context) {
 
 // =============================================
 
-function compiler (template) {
+export function compiler (template) {
   const ast = parse(template)
   transform(ast)
   return generate(ast.jsNode)
@@ -409,6 +409,3 @@ const FunctionDeclNode = {
     }
   ]
 }
-
-const template = '<div><p>hello</p><p>World</p></div>'
-console.log(compiler(template))
