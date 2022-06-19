@@ -32,7 +32,7 @@ function effect (fn) {
   currentEffect = null
 }
 
-export {
+module.exports = {
   createReactive,
-  effect,
+  effect
 }

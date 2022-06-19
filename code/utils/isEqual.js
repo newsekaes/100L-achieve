@@ -21,4 +21,4 @@ function isEqual (obj1, obj2) {
   return keys1.every(key => isEqual(obj1[key], obj2[key]))
 }
 
-export { isEqual }
+module.exports = { isEqual }

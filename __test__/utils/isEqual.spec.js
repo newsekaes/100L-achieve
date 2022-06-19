@@ -1,4 +1,4 @@
-import { isEqual } from 'code/utils/isEqual.js'
+const { isEqual } = require('code/utils/isEqual.js')
 describe('Test deep isEqual', () => {
   describe('Primitive value case', () => {
     it('String ', function () {

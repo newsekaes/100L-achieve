@@ -11,7 +11,7 @@ function isAlpha (char) {
   return /[a-z|A-Z]/.test(char)
 }
 
-export function tokenize (str) {
+function tokenize (str) {
   let currentState = State.initial
   const chars = []
   const tokens = []
@@ -93,7 +93,7 @@ export function tokenize (str) {
   return tokens
 }
 
-export function parse (str) {
+function parse (str) {
   const tokens = tokenize(str)
   const root = {
     type: 'Root',
@@ -366,7 +366,7 @@ function genCallExpression (node, context) {
 
 // =============================================
 
-export function compiler (template) {
+function compiler (template) {
   const ast = parse(template)
   transform(ast)
   return generate(ast.jsNode)
@@ -409,3 +409,5 @@ const FunctionDeclNode = {
     }
   ]
 }
+
+module.exports = { tokenize, parse, compiler }

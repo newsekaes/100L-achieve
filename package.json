@@ -4,8 +4,8 @@
   "description": "Complete core functions with 100 lines of code",
   "main": "index.js",
   "scripts": {
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "lint-fix": "node node_modules/eslint/bin/eslint.js --fix --ext .js"
   },
   "repository": {
@@ -31,5 +31,5 @@
     "eslint-plugin-n": "^15.2.1",
     "eslint-plugin-promise": "^6.0.0"
   },
-  "type": "module"
+  "type": "commonjs"
 }

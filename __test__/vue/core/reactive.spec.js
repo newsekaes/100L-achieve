@@ -1,5 +1,4 @@
-import { createReactive, effect } from 'code/vue/core/reactive.js'
-import { jest } from '@jest/globals'
+const { createReactive, effect } = require('code/vue/core/reactive.js')
 
 describe('test vue core', () => {
   describe('first: make a reactive', () => {

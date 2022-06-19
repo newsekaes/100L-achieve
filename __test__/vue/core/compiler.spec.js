@@ -1,4 +1,4 @@
-import { compiler, parse, tokenize } from 'code/vue/core/compiler.js'
+const { compiler, parse, tokenize } = require('code/vue/core/compiler.js')
 
 describe('Test compiler', () => {
   const template = '<div><p>hello</p><p>World</p></div>'
@@ -46,7 +46,7 @@ describe('Test compiler', () => {
   })
 
   it('Whole Pass', function () {
-    console.log(compiler(template))
+    // console.log(compiler(template))
     expect(compiler(template)).toEqual(
       'function render () {\n  return h(\'div\', [h(\'p\', \'hello\'), h(\'p\', \'World\')])\n}'
     )
