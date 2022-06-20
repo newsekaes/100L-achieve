@@ -42,6 +42,9 @@ Promise API，以及`Promise.all`, `Promise.race` 等
 #### 模板编译
 代码实现：[code/vue/core/compiler.js](./code/vue/core/compiler.js)
 
+### 挂在和更新
+代码实现：[code/vue/core/render.js](./code/vue/core/render.js)
+
 ### vue-router
 
 
