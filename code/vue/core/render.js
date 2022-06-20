@@ -49,15 +49,21 @@ function createRenderer (options) {
   }
 
   function patch (oldVnode, newVnode, container) {
-    if (!oldVnode) {
-      mountElement(newVnode, container)
-    } else {
-      if (oldVnode.type !== newVnode.type) {
-        unmount(oldVnode)
+    if (oldVnode && oldVnode.type !== newVnode.type) {
+      unmount(oldVnode)
+      oldVnode = null
+    }
+    const type = newVnode.type
+    if (typeof type === 'string') {
+      if (!oldVnode) {
         mountElement(newVnode, container)
       } else {
         patchElement(oldVnode, newVnode)
       }
+    } else if (typeof type === 'object') {
+      // 组件处理
+    } else {
+      // 其他处理
     }
   }
 
@@ -104,8 +110,35 @@ const renderer = createRenderer({
     }
   },
   patchProps (el, key, preValue, nextValue) {
-    // 特殊处理 class, 因为 el.className 的方式设置 class 最高效
-    if (key === 'class') {
+    if (/^on/.test(key)) {
+      // 处理事件
+      const name = key.slice(2).toLowerCase()
+      const invokers = el._vei || (el._vei = {})
+      let invoker = invokers[key]
+      if (nextValue) {
+        if (!invoker) {
+          invoker = invokers[key] = (e) => {
+            if (e.timestamp < invoker.attached) {
+              return
+            }
+            if (Array.isArray(invoker.value)) {
+              nextValue.forEach(f => f(e))
+            } else {
+              invoker.value(e)
+            }
+          }
+          invoker.value = nextValue
+          invoker.attached = new Date().getTime()
+          el.addEventListener(name, invoker)
+        } else {
+          invoker.value = nextValue
+        }
+      } else if (invoker) {
+        delete invokers[key]
+        el.removeEventListener(name, invoker)
+      }
+    } else if (key === 'class') {
+      // 特殊处理 class, 因为 el.className 的方式设置 class 最高效
       el.className = nextValue || ''
     } else if (shouldSetAsProps(el, key, nextValue)) {
       const type = typeof el[key]
