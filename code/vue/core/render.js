@@ -7,7 +7,7 @@ function createRenderer (options) {
     removeElement
   } = options
 
-  function mountElement (vnode, container) {
+  function mountElement (vnode, container, anchor) {
     const el = vnode.el = createElement(vnode.type)
     if (typeof vnode.children === 'string') {
       setElementText(el, vnode.children)
@@ -25,7 +25,7 @@ function createRenderer (options) {
       }
     }
 
-    insert(el, container)
+    insert(el, container, anchor)
   }
 
   function patchElement (oldVnode, newVnode) {
@@ -46,9 +46,84 @@ function createRenderer (options) {
         patchProps(el, key, oldProps[key], null)
       }
     }
+
+    patchChildren(oldVnode, newVnode, el)
   }
 
-  function patch (oldVnode, newVnode, container) {
+  function patchChildren (oldVnode, newVnode, container) {
+    /* 新节点的子节点是文本节点 */
+    if (typeof newVnode.children === 'string') {
+      /* 旧节点如果是一组，则先逐个卸载 */
+      if (Array.isArray(oldVnode.children)) {
+        oldVnode.children.forEach(vnode => unmount(vnode))
+      }
+      setElementText(container, newVnode.children)
+    } /* 新节点的子节点是一组 */ else if (Array.isArray(newVnode.children)) {
+      /* 新旧子节点都是数组，需要 diff */
+      if (Array.isArray(oldVnode.children)) {
+        // oldVnode.children.forEach(vnode => unmount(vnode))
+        // newVnode.children.forEach(vnode => patch(null, vnode, container))
+        const oldChildren = oldVnode.children
+        const newChildren = newVnode.children
+
+        let lastIndex = 0
+        for (let i = 0; i < newChildren.length; i++) {
+          const n2 = newChildren[i]
+          let find = false
+          for (let j = 0; j < oldChildren.length; j++) {
+            const n1 = oldChildren[j]
+            /* 找到 key, 只需要 update */
+            if (n1.key && n2.key && n2.key === n1.key) {
+              patch(n1, n2, container)
+              if (j < lastIndex) {
+                const preVNode = newChildren[i - 1]
+                /* 疑问：preNode 可能不存在吗？ */
+                /* 1. 假设 preNode 不存在的情况是 i = 0, 但此时 lastIndex 一定为0，不存在 j < lastIndex, 故此情况不会发生 */
+                /* 2. 考虑 newChildren 中可能有空值：[null, vnode1, vnode2, null, ...] */
+                if (preVNode) {
+                  insert(n2.el, container, preVNode.el.nextSibling)
+                }
+              } else {
+                lastIndex = j
+              }
+              find = true
+              break
+            }
+          }
+          /* newChildren 中没找到，说明是新加的 */
+          if (!find) {
+            const preVNode = newChildren[i - 1]
+            let anchor = null
+            if (preVNode) {
+              anchor = preVNode.el.nextSibling
+            } else {
+              anchor = container.firstChild
+            }
+            patch(null, n2, container, anchor)
+          }
+        }
+        for (let i = 0; i < oldChildren.length; i++) {
+          const oldVNode = oldChildren[i]
+          const has = oldChildren.find(n => n.key && oldVNode.key && n.key === oldVNode.key)
+          if (!has) {
+            unmount(oldVNode)
+          }
+        }
+      } else {
+        setElementText(container, '')
+        newVnode.children.forEach(vnode => patch(null, vnode, container))
+      }
+    } /* 没有新的子节点 */ else {
+      /* 旧节点如果是一组，则先逐个卸载 */
+      if (Array.isArray(oldVnode.children)) {
+        oldVnode.children.forEach(vnode => unmount(vnode))
+      } else if (typeof oldVnode.children === 'string') {
+        setElementText(container, '')
+      }
+    }
+  }
+
+  function patch (oldVnode, newVnode, container, anchor) {
     if (oldVnode && oldVnode.type !== newVnode.type) {
       unmount(oldVnode)
       oldVnode = null
@@ -56,7 +131,7 @@ function createRenderer (options) {
     const type = newVnode.type
     if (typeof type === 'string') {
       if (!oldVnode) {
-        mountElement(newVnode, container)
+        mountElement(newVnode, container, anchor)
       } else {
         patchElement(oldVnode, newVnode)
       }

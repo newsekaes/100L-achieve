@@ -190,5 +190,122 @@ describe('Test renderer', function () {
         expect(newClickHandle).toBeCalledTimes(1)
       })
     })
+    describe('Children Patch', () => {
+      const nullVnodeFn = () => ({
+        type: 'div',
+        props: {},
+        children: null
+      })
+      const stringVnodeFn = () => ({
+        type: 'div',
+        props: {},
+        children: 'hello world'
+      })
+      const arrayVnodeFn = () => ({
+        type: 'div',
+        props: {},
+        children: [
+          { type: 'span', children: 'hello' },
+          { type: 'span', children: 'world' }
+        ]
+      })
+      describe('Case old is null', () => {
+        beforeEach(() => {
+          const vnode = nullVnodeFn()
+          renderer.render(vnode, root)
+        })
+        it('Test old initial', function () {
+          expect(root.innerHTML).toEqual('<div></div>')
+        })
+        it('Case new is string', function () {
+          const vnode = stringVnodeFn()
+          renderer.render(vnode, root)
+          expect(root.innerHTML).toEqual('<div>hello world</div>')
+        })
+        it('Case new is array', function () {
+          const vnode = arrayVnodeFn()
+          renderer.render(vnode, root)
+          expect(root.innerHTML).toEqual('<div><span>hello</span><span>world</span></div>')
+        })
+      })
+      describe('Case old is string', () => {
+        beforeEach(() => {
+          const vnode = stringVnodeFn()
+          renderer.render(vnode, root)
+        })
+        it('Test old initial', function () {
+          expect(root.innerHTML).toEqual('<div>hello world</div>')
+        })
+        it('Case new is null', function () {
+          const vnode = nullVnodeFn()
+          renderer.render(vnode, root)
+          expect(root.innerHTML).toEqual('<div></div>')
+        })
+        it('Case new is array', function () {
+          const vnode = arrayVnodeFn()
+          renderer.render(vnode, root)
+          expect(root.innerHTML).toEqual('<div><span>hello</span><span>world</span></div>')
+        })
+      })
+      describe('Case old is array', () => {
+        beforeEach(() => {
+          const vnode = arrayVnodeFn()
+          renderer.render(vnode, root)
+        })
+        it('Test old initial', function () {
+          expect(root.innerHTML).toEqual('<div><span>hello</span><span>world</span></div>')
+        })
+        it('Case new is null', function () {
+          const vnode = nullVnodeFn()
+          renderer.render(vnode, root)
+          expect(root.innerHTML).toEqual('<div></div>')
+        })
+        it('Case new is string', function () {
+          const vnode = stringVnodeFn()
+          renderer.render(vnode, root)
+          expect(root.innerHTML).toEqual('<div>hello world</div>')
+        })
+        it('Case new is array', function () {
+          const vnode = {
+            type: 'div',
+            props: {},
+            children: [
+              { type: 'span', children: 'good' },
+              { type: 'span', children: 'nights' }
+            ]
+          }
+          renderer.render(vnode, root)
+          expect(root.innerHTML).toEqual('<div><span>good</span><span>nights</span></div>')
+        })
+      })
+      describe('Use key', () => {
+        it('Key diff', function () {
+          const n1 = {
+            type: 'div',
+            props: {},
+            children: [
+              { type: 'span', children: 'hello', key: 'a' },
+              { type: 'span', children: 'world', key: 'b' }
+            ]
+          }
+
+          renderer.render(n1, root)
+
+          const n2 = {
+            type: 'div',
+            props: {},
+            children: [
+              { type: 'span', children: 'good', key: 'b' },
+              { type: 'span', children: 'nights', key: 'a' },
+              { type: 'span', children: '!!!', key: 'c' }
+            ]
+          }
+
+          renderer.render(n2, root)
+
+          expect(root.innerHTML).toEqual('<div><span>good</span><span>nights</span><span>!!!</span></div>')
+        })
+      })
+    })
   })
 })
