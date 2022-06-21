@@ -50,6 +50,122 @@ function createRenderer (options) {
     patchChildren(oldVnode, newVnode, el)
   }
 
+  function simpleDiff (oldVnode, newVnode, container) {
+    // oldVnode.children.forEach(vnode => unmount(vnode))
+    // newVnode.children.forEach(vnode => patch(null, vnode, container))
+    const oldChildren = oldVnode.children
+    const newChildren = newVnode.children
+
+    let lastIndex = 0
+    for (let i = 0; i < newChildren.length; i++) {
+      const n2 = newChildren[i]
+      let find = false
+      for (let j = 0; j < oldChildren.length; j++) {
+        const n1 = oldChildren[j]
+        /* 找到 key, 只需要 update */
+        if (n1.key && n2.key && n2.key === n1.key) {
+          patch(n1, n2, container)
+          if (j < lastIndex) {
+            const preVNode = newChildren[i - 1]
+            /* 疑问：preNode 可能不存在吗？ */
+            /* 1. 假设 preNode 不存在的情况是 i = 0, 但此时 lastIndex 一定为0，不存在 j < lastIndex, 故此情况不会发生 */
+            /* 2. 考虑 newChildren 中可能有空值：[null, vnode1, vnode2, null, ...] */
+            if (preVNode) {
+              insert(n2.el, container, preVNode.el.nextSibling)
+            }
+          } else {
+            lastIndex = j
+          }
+          find = true
+          break
+        }
+      }
+      /* newChildren 中没找到，说明是新加的 */
+      if (!find) {
+        const preVNode = newChildren[i - 1]
+        let anchor = null
+        if (preVNode) {
+          anchor = preVNode.el.nextSibling
+        } else {
+          anchor = container.firstChild
+        }
+        patch(null, n2, container, anchor)
+      }
+    }
+    for (let i = 0; i < oldChildren.length; i++) {
+      const oldVNode = oldChildren[i]
+      const has = newChildren.find(n => n.key && oldVNode.key && n.key === oldVNode.key)
+      if (!has) {
+        unmount(oldVNode)
+      }
+    }
+  }
+
+  function endsDiff (n1, n2, container) {
+    const oldChildren = n1.children
+    const newChildren = n2.children
+    let oldStart = 0; let oldEnd = oldChildren.length - 1; let newStart = 0; let newEnd = newChildren.length - 1
+    while (oldStart <= oldEnd && newStart <= newEnd) {
+      const n1s = oldChildren[oldStart]
+      const n1e = oldChildren[oldEnd]
+      const n2s = newChildren[newStart]
+      const n2e = newChildren[newEnd]
+      if (!n1s) {
+        oldStart++
+      } else if (!n1e) {
+        oldEnd--
+      } else if (n1s.key && n2s.key && n1s.key === n2s.key) {
+        patch(n1s, n2s, container)
+        oldStart++
+        newStart++
+      } else if (n1s.key && n2e.key && n1s.key === n2e.key) {
+        patch(n1s, n2e, container)
+        const anchor = n1e.el.nextSibling
+        insert(n1s.el, container, anchor)
+        oldStart++
+        newEnd--
+      } else if (n1e.key && n2s.key && n1e.key === n2s.key) {
+        patch(n1e, n2s, container)
+        const anchor = n1s.el
+        insert(n1e.el, container, anchor)
+        oldEnd--
+        newStart++
+      } else if (n1e.key && n2e.key && n1e.key === n2e.key) {
+        patch(n1e, n2e)
+        oldEnd--
+        newEnd--
+      } else {
+        const indexInOld = oldChildren.findIndex(node => node && node.key && n2s.key && n2s.key === node.key)
+        if (indexInOld >= 0) {
+          patch(oldChildren[indexInOld], n2s)
+          const preVNode = newChildren[newStart - 1]
+          let anchor
+          if (preVNode) {
+            anchor = preVNode.el.nextSibling
+          } else {
+            anchor = container.firstChild
+          }
+          insert(oldChildren[indexInOld].el, container, anchor)
+          oldChildren[indexInOld] = undefined
+        } else {
+          // 新节点
+          patch(null, n2s, container, n1s.el)
+        }
+        newStart++
+      }
+    }
+    // 额外处理新添加的
+    if (oldEnd < oldStart && newStart <= newEnd) {
+      for (let i = newStart; i <= newEnd; i++) {
+        patch(null, newChildren[i], container, oldChildren[oldStart] && oldChildren[oldStart].el)
+      }
+    } else if (oldEnd >= oldStart && newStart > newEnd) {
+      for (let i = oldStart; i <= oldEnd; i++) {
+        oldChildren[i] && unmount(oldChildren[i])
+      }
+    }
+  }
+
   function patchChildren (oldVnode, newVnode, container) {
     /* 新节点的子节点是文本节点 */
     if (typeof newVnode.children === 'string') {
@@ -61,54 +177,11 @@ function createRenderer (options) {
     } /* 新节点的子节点是一组 */ else if (Array.isArray(newVnode.children)) {
       /* 新旧子节点都是数组，需要 diff */
       if (Array.isArray(oldVnode.children)) {
-        // oldVnode.children.forEach(vnode => unmount(vnode))
-        // newVnode.children.forEach(vnode => patch(null, vnode, container))
-        const oldChildren = oldVnode.children
-        const newChildren = newVnode.children
+        /* 简单 Diff */
+        // simpleDiff(oldVnode, newVnode, container)
 
-        let lastIndex = 0
-        for (let i = 0; i < newChildren.length; i++) {
-          const n2 = newChildren[i]
-          let find = false
-          for (let j = 0; j < oldChildren.length; j++) {
-            const n1 = oldChildren[j]
-            /* 找到 key, 只需要 update */
-            if (n1.key && n2.key && n2.key === n1.key) {
-              patch(n1, n2, container)
-              if (j < lastIndex) {
-                const preVNode = newChildren[i - 1]
-                /* 疑问：preNode 可能不存在吗？ */
-                /* 1. 假设 preNode 不存在的情况是 i = 0, 但此时 lastIndex 一定为0，不存在 j < lastIndex, 故此情况不会发生 */
-                /* 2. 考虑 newChildren 中可能有空值：[null, vnode1, vnode2, null, ...] */
-                if (preVNode) {
-                  insert(n2.el, container, preVNode.el.nextSibling)
-                }
-              } else {
-                lastIndex = j
-              }
-              find = true
-              break
-            }
-          }
-          /* newChildren 中没找到，说明是新加的 */
-          if (!find) {
-            const preVNode = newChildren[i - 1]
-            let anchor = null
-            if (preVNode) {
-              anchor = preVNode.el.nextSibling
-            } else {
-              anchor = container.firstChild
-            }
-            patch(null, n2, container, anchor)
-          }
-        }
-        for (let i = 0; i < oldChildren.length; i++) {
-          const oldVNode = oldChildren[i]
-          const has = oldChildren.find(n => n.key && oldVNode.key && n.key === oldVNode.key)
-          if (!has) {
-            unmount(oldVNode)
-          }
-        }
+        /* 双端 Diff */
+        endsDiff(oldVnode, newVnode, container)
       } else {
         setElementText(container, '')
         newVnode.children.forEach(vnode => patch(null, vnode, container))
@@ -148,6 +221,7 @@ function createRenderer (options) {
 
   function render (vnode, container) {
     if (vnode) {
+      // if (vnode.key === undefined) vnode.key = Symbol('key')
       patch(container._vnode, vnode, container)
     } else {
       // 判断是否需要卸载
