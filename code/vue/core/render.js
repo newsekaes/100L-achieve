@@ -166,6 +166,120 @@ function createRenderer (options) {
     }
   }
 
+  function quickDiff (n1, n2, container) {
+    const oldChildren = n1.children
+    const newChildren = n2.children
+
+    let j = 0 // 用来记录 oldChildren 中的插值index, 以供 newChildren 需要新添加的插入
+
+    let oldStartIndex = 0
+    let oldEndIndex = oldChildren.length - 1
+    let newStartIndex = 0
+    let newEndIndex = newChildren.length - 1
+
+    let oldStartVNode = oldChildren[oldStartIndex]
+    let oldEndVNode = oldChildren[oldEndIndex]
+    let newStartVNode = newChildren[newStartIndex]
+    let newEndVNode = newChildren[newEndIndex]
+
+    while (hasSameKey(oldStartVNode, newStartVNode)) {
+      patch(oldStartVNode, newStartVNode)
+      oldStartVNode = oldChildren[++oldStartIndex]
+      newStartVNode = newChildren[++newStartIndex]
+      j++
+    }
+
+    while (hasSameKey(oldEndVNode, newEndVNode) && oldEndIndex >= j && newEndIndex >= j) {
+      patch(oldEndVNode, newEndVNode)
+      oldEndVNode = oldChildren[--oldEndIndex]
+      newEndVNode = newChildren[--newEndIndex]
+    }
+
+    /* 一方遍历完，另一方有剩余 */
+    /* 新节点需要新增 */
+    if (j <= newEndIndex && j > oldEndIndex) {
+      const anchorVNode = newChildren[newEndIndex + 1]
+      const anchor = anchorVNode && anchorVNode.el
+      while (j <= newEndIndex) {
+        patch(null, newChildren[j++], container, anchor)
+      }
+    } /* 旧节点需要卸载 */ else if (j <= oldEndIndex && j > newEndIndex) {
+      while (j <= oldEndIndex) {
+        unmount(oldChildren[j++])
+      }
+    } /* 快速 Diff 的核心部分 */ else {
+      // 构建一个 新节点对应旧节点中索引值（index）的source表
+      // 先遍历旧节点，生成一个 Map 表
+      const count = newEndIndex - j + 1
+      let patched = 0
+      let move = false
+      let pos = 0
+      const source = new Array(count).fill(-1)
+
+      /* 注意，为什么不先遍历 old, 再遍历 new 呢？ */
+      /* 1. 因为 source 是基于 newVNodes 的长度来的，-1 时表示新加，一切新节点的 mount 操作，都应该利用 -1 来进行 */
+      /* 2. 如果先遍历 old, 再遍历 new，无法得知 old 中哪些需要 unmount，而只能知道 new 中哪些需要 mount, 而这和 -1 值的关注点冲突 */
+      /* 待验证：如果先 遍历 old，再遍历 new，那么 source 表应该基于 oldVNodes 的长度进行，-1 表示哪些需要旧节点需要 unmount */
+
+      const map = new Map()
+
+      for (let i = j; i <= newEndIndex; i++) {
+        if (newChildren[i].key) {
+          map.set(newChildren[i].key, i)
+        }
+      }
+
+      // 生成 source 表
+      for (let oldIdx = j; oldIdx <= oldEndIndex; oldIdx++) {
+        const oldVNode = oldChildren[oldIdx]
+        /* 优化策略：当已经 patch 的旧节点数量已经和新节点数量一致，可以推定剩下的旧节点全部可以 unmount */
+        if (patched < count) {
+          if (oldVNode.key && map.has(oldVNode.key)) {
+            const newIdx = map.get(oldVNode.key)
+            patch(oldVNode, newChildren[newIdx], container)
+            patched++
+            source[newIdx - j] = oldIdx
+            if (newIdx < pos) {
+              move = true
+            } else {
+              pos = newIdx
+            }
+          } else {
+            unmount(oldVNode)
+          }
+        } else {
+          unmount(oldVNode)
+        }
+      }
+
+      // 进行移动
+      if (move || source.includes(-1)) {
+        const seq = lis(source)
+        let seqEndIndex = seq.length - 1
+        let sourceEndIndex = count - 1 // source.length - 1
+        while (sourceEndIndex >= 0) {
+          if (source[sourceEndIndex] === -1) {
+            // 新加
+            const curIndex = sourceEndIndex + j
+            const nextIndex = curIndex + 1
+            const anchor = nextIndex < newChildren.length ? newChildren[nextIndex].el : null
+            patch(null, newChildren[sourceEndIndex + j], container, anchor)
+          } else if (sourceEndIndex !== seq[seqEndIndex]) {
+            // 需要移动
+            const curIndex = sourceEndIndex + j
+            const nextIndex = curIndex + 1
+            const anchor = nextIndex < newChildren.length ? newChildren[nextIndex].el : null
+            insert(newChildren[sourceEndIndex + j].el, container, anchor)
+          } else {
+            // 不需要移动，seqEndIndex 左移
+            seqEndIndex--
+          }
+          sourceEndIndex--
+        }
+      }
+    }
+  }
+
   function patchChildren (oldVnode, newVnode, container) {
     /* 新节点的子节点是文本节点 */
     if (typeof newVnode.children === 'string') {
@@ -181,7 +295,10 @@ function createRenderer (options) {
         // simpleDiff(oldVnode, newVnode, container)
 
         /* 双端 Diff */
-        endsDiff(oldVnode, newVnode, container)
+        // endsDiff(oldVnode, newVnode, container)
+
+        /* 快速 Diff */
+        quickDiff(oldVnode, newVnode, container)
       } else {
         setElementText(container, '')
         newVnode.children.forEach(vnode => patch(null, vnode, container))
@@ -240,6 +357,51 @@ function createRenderer (options) {
 function shouldSetAsProps (el, key, value) {
   if (key === 'form' && el.tagName === 'INPUT') return false
   return key in el
+}
+
+function hasSameKey (n1, n2) {
+  return n1 && n1.key && n2 && n2.key && n1.key === n2.key
+}
+
+function lis (arr) {
+  const p = arr.slice()
+  const result = [0]
+  let i, j, u, v, c
+  const len = arr.length
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i]
+    if (arrI !== 0) {
+      j = result[result.length - 1]
+      if (arr[j] < arrI) {
+        p[i] = j
+        result.push(i)
+        continue
+      }
+      u = 0
+      v = result.length - 1
+      while (u < v) {
+        c = ((u + v) / 2) | 0
+        if (arr[result[c]] < arrI) {
+          u = c + 1
+        } else {
+          v = c
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[u - 1]
+        }
+        result[u] = i
+      }
+    }
+  }
+  u = result.length
+  v = result[u - 1]
+  while (u-- > 0) {
+    result[u] = v
+    v = p[v]
+  }
+  return result
 }
 
 const renderer = createRenderer({

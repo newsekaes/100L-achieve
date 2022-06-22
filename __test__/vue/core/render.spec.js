@@ -333,42 +333,126 @@ describe('Test renderer', function () {
 
           expect(root.innerHTML).toEqual('<div><span>c</span><span>b</span><span>a</span></div>')
         })
-        it('New need add', function () {
-          const n1 = {
-            type: 'div',
-            props: {},
-            children: [
-              { type: 'span', children: 'a', key: 'a' },
-              { type: 'span', children: 'b', key: 'b' }
-            ]
-          }
+        describe('New need add', () => {
+          it('New items is around', function () {
+            const n1 = {
+              type: 'div',
+              props: {},
+              children: [
+                { type: 'span', children: 'a', key: 'a' },
+                { type: 'span', children: 'b', key: 'b' }
+              ]
+            }
 
-          renderer.render(n1, root)
+            renderer.render(n1, root)
 
-          const n2 = {
-            type: 'div',
-            props: {},
-            children: [
-              { type: 'span', children: 'c', key: 'c' },
-              { type: 'span', children: 'a', key: 'a' },
-              { type: 'span', children: 'b', key: 'b' },
-              { type: 'span', children: 'd', key: 'd' }
-            ]
-          }
+            const n2 = {
+              type: 'div',
+              props: {},
+              children: [
+                { type: 'span', children: 'c', key: 'c' },
+                { type: 'span', children: 'a', key: 'a' },
+                { type: 'span', children: 'b', key: 'b' },
+                { type: 'span', children: 'd', key: 'd' }
+              ]
+            }
 
-          renderer.render(n2, root)
+            renderer.render(n2, root)
 
-          expect(root.innerHTML).toEqual('<div><span>c</span><span>a</span><span>b</span><span>d</span></div>')
+            expect(root.innerHTML).toEqual('<div><span>c</span><span>a</span><span>b</span><span>d</span></div>')
+          })
+          it('New items is middle', function () {
+            const n1 = {
+              type: 'div',
+              props: {},
+              children: [
+                { type: 'span', children: 'a', key: 'a' },
+                { type: 'span', children: 'b', key: 'b' }
+              ]
+            }
+
+            renderer.render(n1, root)
+
+            const n2 = {
+              type: 'div',
+              props: {},
+              children: [
+                { type: 'span', children: 'a', key: 'a' },
+                { type: 'span', children: 'c', key: 'c' },
+                { type: 'span', children: 'd', key: 'd' },
+                { type: 'span', children: 'b', key: 'b' }
+              ]
+            }
+
+            renderer.render(n2, root)
+
+            expect(root.innerHTML).toEqual('<div><span>a</span><span>c</span><span>d</span><span>b</span></div>')
+          })
         })
-        it('Old need remove', function () {
+        describe('Old need remove', function () {
+          it('Old items is around', function () {
+            const n1 = {
+              type: 'div',
+              props: {},
+              children: [
+                { type: 'span', children: 'c', key: 'c' },
+                { type: 'span', children: 'a', key: 'a' },
+                { type: 'span', children: 'b', key: 'b' },
+                { type: 'span', children: 'd', key: 'd' }
+              ]
+            }
+
+            renderer.render(n1, root)
+
+            const n2 = {
+              type: 'div',
+              props: {},
+              children: [
+                { type: 'span', children: 'a', key: 'a' },
+                { type: 'span', children: 'b', key: 'b' }
+              ]
+            }
+
+            renderer.render(n2, root)
+
+            expect(root.innerHTML).toEqual('<div><span>a</span><span>b</span></div>')
+          })
+          it('Old items is middle', function () {
+            const n1 = {
+              type: 'div',
+              props: {},
+              children: [
+                { type: 'span', children: 'a', key: 'a' },
+                { type: 'span', children: 'c', key: 'c' },
+                { type: 'span', children: 'd', key: 'd' },
+                { type: 'span', children: 'b', key: 'b' }
+              ]
+            }
+
+            renderer.render(n1, root)
+
+            const n2 = {
+              type: 'div',
+              props: {},
+              children: [
+                { type: 'span', children: 'a', key: 'a' },
+                { type: 'span', children: 'b', key: 'b' }
+              ]
+            }
+
+            renderer.render(n2, root)
+
+            expect(root.innerHTML).toEqual('<div><span>a</span><span>b</span></div>')
+          })
+        })
+        it('Same start, different end', function () {
           const n1 = {
             type: 'div',
             props: {},
             children: [
-              { type: 'span', children: 'c', key: 'c' },
               { type: 'span', children: 'a', key: 'a' },
               { type: 'span', children: 'b', key: 'b' },
-              { type: 'span', children: 'd', key: 'd' }
+              { type: 'span', children: 'c', key: 'c' }
             ]
           }
 
@@ -379,13 +463,41 @@ describe('Test renderer', function () {
             props: {},
             children: [
               { type: 'span', children: 'a', key: 'a' },
-              { type: 'span', children: 'b', key: 'b' }
+              { type: 'span', children: 'b', key: 'b' },
+              { type: 'span', children: 'd', key: 'd' }
             ]
           }
 
           renderer.render(n2, root)
 
-          expect(root.innerHTML).toEqual('<div><span>a</span><span>b</span></div>')
+          expect(root.innerHTML).toEqual('<div><span>a</span><span>b</span><span>d</span></div>')
+        })
+        it('Same end, different start', function () {
+          const n1 = {
+            type: 'div',
+            props: {},
+            children: [
+              { type: 'span', children: 'a', key: 'a' },
+              { type: 'span', children: 'b', key: 'b' },
+              { type: 'span', children: 'c', key: 'c' }
+            ]
+          }
+
+          renderer.render(n1, root)
+
+          const n2 = {
+            type: 'div',
+            props: {},
+            children: [
+              { type: 'span', children: 'd', key: 'd' },
+              { type: 'span', children: 'b', key: 'b' },
+              { type: 'span', children: 'c', key: 'c' }
+            ]
+          }
+
+          renderer.render(n2, root)
+
+          expect(root.innerHTML).toEqual('<div><span>d</span><span>b</span><span>c</span></div>')
         })
         it('Random Sequence case', function () {
           const n1 = {
