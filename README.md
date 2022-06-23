@@ -27,6 +27,8 @@ Promise API，以及`Promise.all`, `Promise.race` 等
 代码实现：[code/utils/deepClone.js](./code/utils/deepClone.js)
 
 ## 3. React
+### Core[核心模块]
+代码实现：[code/react/core/index.js](./code/react/core/index.js)
 
 ### Router
 
