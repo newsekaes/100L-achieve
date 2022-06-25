@@ -43,6 +43,26 @@ describe('Test MyReactDOM render feature', () => {
     })
   })
 
+  describe('Test functional component', () => {
+    it('functional component render', async function () {
+      function App (props) {
+        return MyReact.createElement('input', {
+          id: props.id
+        })
+      }
+      const vnode = MyReact.createElement(
+        'div',
+        {},
+        MyReact.createElement(App, { id: 'input' })
+      )
+      MyReact.render(vnode, root)
+      await nextTick()
+      root.firstChild.click()
+      await nextTick()
+      expect(root.innerHTML).toEqual('<div><input id="input"></div>')
+    })
+  })
+
   describe('Test patch', () => {
     describe('Basic patch', () => {
       beforeEach(async () => {
@@ -136,6 +156,63 @@ describe('Test MyReactDOM render feature', () => {
         await nextTick()
         expect(oldClickHandle).toBeCalledTimes(0)
         expect(newClickHandle).toBeCalledTimes(1)
+      })
+    })
+
+    describe('Functional component patch', () => {
+      describe('Basic function', () => {
+        function App (props) {
+          return MyReact.createElement('input', {
+            id: props.id
+          })
+        }
+        beforeEach(async () => {
+          const vnode = MyReact.createElement(
+            'div',
+            {},
+            MyReact.createElement(App, { id: 'input' })
+          )
+          MyReact.render(vnode, root)
+          await nextTick()
+        })
+        it('Update functional component', async function () {
+          const vnode = MyReact.createElement(
+            'div',
+            {},
+            MyReact.createElement(App, { id: 'nextInput' })
+          )
+          MyReact.render(vnode, root)
+          await nextTick()
+          expect(root.innerHTML).toEqual('<div><input id="nextInput"></div>')
+        })
+        it('Unmount functional component', async function () {
+          await nextTick()
+          const vnode = MyReact.createElement(
+            'div',
+            {}
+          )
+          MyReact.render(vnode, root)
+          await nextTick()
+          expect(root.innerHTML).toEqual('<div></div>')
+        })
+      })
+
+      describe('With hook', () => {
+        beforeEach(() => {
+        })
+        it('UseState ok', async function () {
+          const App = () => {
+            const [state, setState] = MyReact.useState(1)
+            return MyReact.createElement('div', { onClick: () => { setState(s => s + 1) } }, `${state}`)
+          }
+          const vnode = MyReact.createElement(App, {})
+          MyReact.render(vnode, root)
+          await nextTick()
+          expect(root.innerHTML).toEqual('<div>1</div>')
+          root.firstChild.click()
+          await nextTick()
+          expect(root.innerHTML).toEqual('<div>2</div>')
+        })
       })
     })
   })

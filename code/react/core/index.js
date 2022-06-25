@@ -112,13 +112,13 @@ module.exports = function () {
 
   function performUnitOfWork (fiber) {
     // 工作1：新建一个真实DOM
-    if (!fiber.dom) {
-      fiber.dom = createDom(fiber)
-    }
+    const isFunctionComponent = fiber.type instanceof Function
 
-    // 工作2：生成children的Fiber，并返回下一个unitOfWork
-    const elements = fiber.props.children
-    reconcileChildren(fiber, elements)
+    if (isFunctionComponent) {
+      updateFunctionComponent(fiber)
+    } else {
+      updateHostComponent(fiber)
+    }
 
     if (fiber.child) {
       return fiber.child
@@ -135,6 +135,60 @@ module.exports = function () {
     // 默认返回 return undefined
   }
 
+  let wipFiber = null
+  let hookIndex = null
+
+  function updateFunctionComponent (fiber) {
+    wipFiber = fiber
+    hookIndex = 0
+    wipFiber.hooks = []
+
+    const children = [fiber.type(fiber.props)]
+    reconcileChildren(fiber, children)
+  }
+
+  function useState (initial) {
+    const oldHook =
+      wipFiber.alternate &&
+      wipFiber.alternate.hooks &&
+      wipFiber.alternate.hooks[hookIndex]
+
+    const hook = {
+      state: oldHook ? oldHook.state : initial,
+      queue: []
+    }
+
+    const actions = oldHook ? oldHook.queue : []
+    actions.forEach(action => {
+      hook.state = action(hook.state)
+    })
+
+    const setState = action => {
+      hook.queue.push(action)
+      wipRoot = {
+        dom: currentRoot.dom,
+        props: currentRoot.props,
+        alternate: currentRoot
+      }
+      nextUnitOfWork = wipRoot
+      deletions = [] // todo ???
+    }
+
+    wipFiber.hooks.push(hook)
+    hookIndex++
+
+    return [hook.state, setState]
+  }
+
+  function updateHostComponent (fiber) {
+    if (!fiber.dom) {
+      fiber.dom = createDom(fiber)
+    }
+
+    // 工作2：生成children的Fiber，并返回下一个unitOfWork
+    reconcileChildren(fiber, fiber.props.children)
+  }
+
   function reconcileChildren (wipFiber, elements) {
     let index = 0
 
@@ -142,7 +196,7 @@ module.exports = function () {
     let preSibling = null
 
     // 做 Fiber树 和 单向链表
-    while (index < elements.length || !!oldFiber) {
+    while (index < elements.length || oldFiber) {
       const element = elements[index]
       let newFiber = null
 
@@ -201,11 +255,15 @@ module.exports = function () {
     if (!fiber) {
       return
     }
-    const domParent = fiber.parent.dom
+    let domParentFiber = fiber.parent
+    while (!domParentFiber.dom) {
+      domParentFiber = domParentFiber.parent
+    }
+    const domParent = domParentFiber.dom
     if (fiber.effectTag === 'PLACEMENT' && fiber.dom !== null) {
       domParent.appendChild(fiber.dom)
     } else if (fiber.effectTag === 'DELETION') {
-      domParent.removeChild(fiber.dom)
+      commitDeletion(fiber, domParent)
     } else if (fiber.effectTag === 'UPDATE' && fiber.dom !== null) {
       updateDom(
         fiber.dom,
@@ -213,9 +271,17 @@ module.exports = function () {
         fiber.props
       )
     }
-    // domParent.appendChild(fiber.dom)
-    commitWork(fiber.child)
+    if (fiber.effectTag !== 'DELETION') commitWork(fiber.child)
+    // commitWork(fiber.child)
     commitWork(fiber.sibling)
+  }
+
+  function commitDeletion (fiber, domParent) {
+    if (fiber.dom) {
+      domParent.removeChild(fiber.dom)
+    } else {
+      commitDeletion(fiber.child, domParent)
+    }
   }
 
   function render (element, container) {
@@ -230,8 +296,10 @@ module.exports = function () {
     deletions = []
     nextUnitOfWork = wipRoot
   }
+
   return {
     render,
-    createElement
+    createElement,
+    useState
   }
 }
