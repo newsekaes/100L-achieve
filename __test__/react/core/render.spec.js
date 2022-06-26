@@ -57,9 +57,30 @@ describe('Test MyReactDOM render feature', () => {
       )
       MyReact.render(vnode, root)
       await nextTick()
-      root.firstChild.click()
-      await nextTick()
       expect(root.innerHTML).toEqual('<div><input id="input"></div>')
+    })
+
+    it('functional component with children', async function () {
+      function App (props) {
+        return MyReact.createElement('p', {
+          id: props.id
+        }, ...props.children)
+      }
+      const vnode = MyReact.createElement(
+        'div',
+        {},
+        MyReact.createElement(
+          App,
+          { id: 'p' },
+          MyReact.createElement(
+            'span',
+            {}
+          )
+        )
+      )
+      MyReact.render(vnode, root)
+      await nextTick()
+      expect(root.innerHTML).toEqual('<div><p id="p"><span></span></p></div>')
     })
   })
 
