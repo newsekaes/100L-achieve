@@ -115,4 +115,4 @@ function deepClone (target, context = { map: new WeakMap() }) {
   }
 }
 
-console.log(deepClone({ a: new Map(), b: new Set(), c: Symbol('abc') }))
+module.exports = deepClone
