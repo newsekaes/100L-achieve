@@ -7,6 +7,9 @@ ECMAScript 新特性的向后兼容语法糖
 ### reduce
 代码实现：[code/polyfill/reduce.js](./code/polyfill/reduce.js)
 
+### bind, call 和 apply
+代码实现：[code/polyfill/fn.js](./code/polyfill/fn.js)
+
 ### module
 Webpack 的模块定义与模块引用系统
 
