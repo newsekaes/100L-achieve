@@ -1,5 +1,4 @@
-const { MyPromise } = require('code/polyfill/promise/index')
-const { resolve } = require('eslint-plugin-promise/rules/lib/promise-statics')
+const { MyPromise, runPromiseInSequence } = require('code/polyfill/promise/index')
 
 describe('Test Promise polyfill', () => {
   describe('Test single', function () {
@@ -172,5 +171,20 @@ describe('Test Promise polyfill', () => {
         expect(err === e).toBeTruthy()
       }
     })
+  })
+})
+
+describe('Test runPromiseInSequence', () => {
+  it('every pass', async function () {
+    const fn1 = jest.fn().mockResolvedValue('a')
+    const fn2 = jest.fn().mockResolvedValue('b')
+    const fn3 = jest.fn()
+    await new Promise(resolve => {
+      fn3.mockImplementation(() => resolve())
+      expect(runPromiseInSequence([fn1, fn2, fn3], 'init'))
+    })
+    expect(fn1).toBeCalledWith('init')
+    expect(fn2).toBeCalledWith('a')
+    expect(fn3).toBeCalledWith('b')
   })
 })

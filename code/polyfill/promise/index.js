@@ -111,6 +111,13 @@ MyPromise.all = function (promises) {
   })
 }
 
+function runPromiseInSequence (array, value) {
+  return array.reduce((prePromise, promiseFactory) =>
+    prePromise.then(promiseFactory)
+  , Promise.resolve(value))
+}
+
 module.exports = {
-  MyPromise
+  MyPromise,
+  runPromiseInSequence
 }
