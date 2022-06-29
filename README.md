@@ -4,6 +4,9 @@
 ## 1. Polyfill
 ECMAScript 新特性的向后兼容语法糖
 
+### reduce
+代码实现：[code/polyfill/reduce.js](./code/polyfill/reduce.js)
+
 ### module
 Webpack 的模块定义与模块引用系统
 
@@ -18,6 +21,10 @@ Promise API，以及`Promise.all`, `Promise.race` 等
 ## 2. Utils
 `lodash.js`等 工具库内的经典方法
 
+### compose
+代码实现：[code/utils/compose.js](./code/utils/compose.js)
+
+
 ### isEqual
 判断严格相当
 代码实现：[code/utils/isEqual.js](./code/utils/isEqual.js)
@@ -25,6 +32,9 @@ Promise API，以及`Promise.all`, `Promise.race` 等
 ### deepClone
 深拷贝
 代码实现：[code/utils/deepClone.js](./code/utils/deepClone.js)
+
+### offset
+代码实现：[code/utils/deepClone.js](./code/utils/jqueryOffset.js)
 
 ## 3. React
 ### Core[核心模块]
