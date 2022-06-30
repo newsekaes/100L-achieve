@@ -1,4 +1,5 @@
 const { MyPromise, runPromiseInSequence } = require('code/polyfill/promise/index')
+const { runPromiseByLimit, runPromiseByLimit2 } = require('code/polyfill/promise/runPromiseByLimit')
 
 describe('Test Promise polyfill', () => {
   describe('Test single', function () {
@@ -186,5 +187,67 @@ describe('Test runPromiseInSequence', () => {
     expect(fn1).toBeCalledWith('init')
     expect(fn2).toBeCalledWith('a')
     expect(fn3).toBeCalledWith('b')
+  })
+})
+
+describe('Test runPromiseByLimit', () => {
+  describe('Test type 1', () => {
+    it('Run by sync', async function () {
+      const fnA = jest.fn().mockResolvedValue('a')
+      const fnB = jest.fn().mockResolvedValue('b')
+      const fnC = jest.fn().mockResolvedValue('c')
+      const fnD = jest.fn().mockResolvedValue('d')
+      const fnE = jest.fn().mockResolvedValue('e')
+
+      const result = await runPromiseByLimit([fnA, fnB, fnC, fnD, fnE], 3)
+
+      expect(result).toEqual(['a', 'b', 'c', 'd', 'e'])
+    })
+
+    it('Run by async', async function () {
+      const promiseFactory = (time, value) => () => new Promise(resolve => {
+        setTimeout(() => { resolve(value) }, time)
+      })
+
+      const fnA = promiseFactory(100, 'a')
+      const fnB = promiseFactory(40, 'b')
+      const fnC = promiseFactory(80, 'c')
+      const fnD = promiseFactory(60, 'd')
+      const fnE = promiseFactory(50, 'e')
+
+      const result = await runPromiseByLimit([fnA, fnB, fnC, fnD, fnE], 3)
+
+      expect(result).toEqual(['a', 'b', 'c', 'd', 'e'])
+    })
+  })
+
+  describe('Test type 2', () => {
+    it('Run by sync', async function () {
+      const fnA = jest.fn().mockResolvedValue('a')
+      const fnB = jest.fn().mockResolvedValue('b')
+      const fnC = jest.fn().mockResolvedValue('c')
+      const fnD = jest.fn().mockResolvedValue('d')
+      const fnE = jest.fn().mockResolvedValue('e')
+
+      const result = await runPromiseByLimit2([fnA, fnB, fnC, fnD, fnE], 3)
+
+      expect(result).toEqual(['a', 'b', 'c', 'd', 'e'])
+    })
+
+    it('Run by async', async function () {
+      const promiseFactory = (time, value) => () => new Promise(resolve => {
+        setTimeout(() => { resolve(value) }, time)
+      })
+
+      const fnA = promiseFactory(100, 'a')
+      const fnB = promiseFactory(40, 'b')
+      const fnC = promiseFactory(80, 'c')
+      const fnD = promiseFactory(60, 'd')
+      const fnE = promiseFactory(50, 'e')
+
+      const result = await runPromiseByLimit2([fnA, fnB, fnC, fnD, fnE], 3)
+
+      expect(result).toEqual(['a', 'b', 'c', 'd', 'e'])
+    })
   })
 })

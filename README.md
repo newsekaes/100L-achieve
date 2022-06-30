@@ -14,12 +14,15 @@ ECMAScript 新特性的向后兼容语法糖
 Webpack 的模块定义与模块引用系统
 
 ### Promise
-Promise API，以及`Promise.all`, `Promise.race` 等
+Promise API，以及`Promise.all`, `Promise.race` 等  
 代码实现：[code/polyfill/promise/index.js](./code/polyfill/promise/index.js)
+
+runPromiseByLimit: 同一时间只允许有限个promise运行  
+代码实现：[code/polyfill/promise/runPromiseByLimit.js](./code/polyfill/promise/runPromiseByLimit.js)
 
 ### Event
 事件监听与订阅分发
-[mitt]https://github.com/developit/mitt/blob/main/src/index.ts
+[mitt](https://github.com/developit/mitt/blob/main/src/index.ts)
 
 ## 2. Utils
 `lodash.js`等 工具库内的经典方法
