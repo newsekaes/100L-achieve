@@ -2,54 +2,48 @@ function isPromise (val) {
   return typeof val.then === 'function'
 }
 
+function isThenable (target) {
+  return typeof target === 'object' && typeof target.then === 'function'
+}
+
 function MyPromise (callback) {
   const self = this
-  // const state = {
-  //   pending: 'pending',
-  //   resolved: 'resolved',
-  //   rejected: 'rejected'
-  // }
-  this.status = 'pending'
+  this.status = 'pending' // 'pending' 'fulfilled' 'rejected'
   this.value = undefined
   this.reason = undefined
-  this.resolvedCallbacks = []
-  this.rejectedCallbacks = []
+  this.onFulfilledArray = []
+  this.onRejectedArray = []
+
   function resolve (value) {
-    if (self.status === 'pending') {
-      self.value = value
-      self.status = 'resolved'
-      self.resolvedCallbacks.forEach(({ onFullfilled, resolve, reject }) => {
-        try {
-          const callReturn = onFullfilled(value)
-          if (isPromise(callReturn)) {
-            callReturn.then(resolve, reject)
-          } else {
-            resolve(callReturn)
-          }
-        } catch (err) {
-          reject(err)
-        }
-      }) // 还未支持 .then 返回 promise
-    }
-  }
-  function reject (reason) {
-    if (self.status === 'pending') {
-      self.reason = reason
-      self.status = 'rejected'
-      self.rejectedCallbacks.forEach(({ onRejected, resolve, reject }) => {
-        try {
-          const callReturn = onRejected(reason)
-          if (isPromise(callReturn)) {
-            callReturn.then(resolve, reject)
-          } else {
-            resolve(callReturn)
-          }
-        } catch (err) {
-          reject(err)
+    if (value instanceof MyPromise) {
+      value.then(resolve, reject)
+    } else if (isThenable(value)) {
+      try {
+        value.then(resolve, reject)
+      } catch (err) {
+        reject(err)
+      }
+    } else {
+      setTimeout(() => {
+        if (self.status === 'pending') {
+          self.value = value
+          self.status = 'fulfilled'
+          self.onFulfilledArray.forEach(fn => fn(value))
         }
       })
     }
   }
+
+  function reject (reason) {
+    setTimeout(() => {
+      if (self.status === 'pending') {
+        self.reason = reason
+        self.status = 'rejected'
+        self.onRejectedArray.forEach(fn => fn())
+      }
+    })
+  }
+
   try {
     callback(resolve, reject)
   } catch (err) {
@@ -57,35 +51,70 @@ function MyPromise (callback) {
   }
 }
 
-MyPromise.prototype.then = function (onFullfilled, onRejected) {
-  const self = this
+MyPromise.prototype.then = function (onFulfilled = res => res, onRejected = err => { throw err }) {
   // 返回一个 Promise
-  /* onFullfilled 和 onRejected 是 function， 可能返回一个 Promise 或 非Promise */
+  /* onFulfilled 和 onRejected 是 function， 可能返回一个 Promise 或 非Promise */
   /* 如果是 Promise， 需要把 Promise 的 resolve结果 或 reject原因 返回出去 */
   /* 如果 onRejected 缺失，为了将未处理的 error 传递下去，需要设置其默认值 */
 
-  if (typeof onRejected === 'undefined') {
-    onRejected = err => { throw err }
-  }
-
   return new MyPromise((resolve, reject) => {
+    const onFulfilledFunc = () => {
+      try {
+        const result = onFulfilled(this.value)
+        resolve(result)
+      } catch (e) {
+        reject(e)
+      }
+    }
+
+    const onRejectedFunc = () => {
+      try {
+        const result = onRejected(this.reason)
+        resolve(result)
+      } catch (e) {
+        reject(e)
+      }
+    }
+
     if (this.status === 'pending') {
-      onFullfilled && this.resolvedCallbacks.push({ onFullfilled, resolve, reject })
-      this.rejectedCallbacks.push({ onRejected, resolve, reject })
+      this.onFulfilledArray.push(onFulfilledFunc)
+      this.onRejectedArray.push(onRejectedFunc)
     }
 
     if (this.status === 'resolved') {
-      onFullfilled && resolve(onFullfilled(self.value))
+      setTimeout(onFulfilledFunc)
     }
 
     if (this.status === 'rejected') {
-      reject(onRejected(self.reason))
+      setTimeout(onRejectedFunc)
     }
   })
 }
 
 MyPromise.prototype.catch = function (onRejected) {
-  return this.then(null, onRejected)
+  return this.then(undefined, onRejected)
+}
+
+MyPromise.resolve = function (value) {
+  return new MyPromise(resolve => resolve(value))
+}
+
+MyPromise.reject = function (value) {
+  return new MyPromise((resolve, reject) => reject(value))
+}
+
+MyPromise.race = function (promises) {
+  return new Promise((resolve, reject) => {
+    try {
+      promises.forEach(promise => {
+        isPromise(promise)
+          ? promise.then(resolve, reject)
+          : resolve(promise)
+      })
+    } catch (e) {
+      reject(e)
+    }
+  })
 }
 
 MyPromise.all = function (promises) {

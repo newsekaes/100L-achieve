@@ -4,18 +4,20 @@ const { runPromiseByLimit, runPromiseByLimit2 } = require('code/polyfill/promise
 describe('Test Promise polyfill', () => {
   describe('Test single', function () {
     it('Test resolve async', async function () {
-      const result = await new MyPromise((resolve) => {
+      const fn = jest.fn()
+      await new MyPromise((resolve) => {
         setTimeout(() => {
-          resolve(true)
+          resolve('hello')
         }, 0)
-      })
-      expect(result).toEqual(true)
+      }).then(fn)
+      expect(fn).toBeCalledWith('hello')
     })
     it('Test resolve sync', async function () {
-      const result = await new MyPromise((resolve) => {
+      const fn = jest.fn()
+      await new MyPromise((resolve) => {
         resolve('hello')
-      })
-      expect(result).toEqual('hello')
+      }).then(fn)
+      expect(fn).toBeCalledWith('hello')
     })
     it('Test reject', async function () {
       try {
@@ -47,10 +49,10 @@ describe('Test Promise polyfill', () => {
 
   describe('Test chain', function () {
     it('Test then', async function () {
-      const onFullfilledA = jest.fn()
-      const onFullfilledB = jest.fn()
-      const onFullfilledC = jest.fn()
-      const onFullfilledD = jest.fn()
+      const onFulfilledA = jest.fn()
+      const onFulfilledB = jest.fn()
+      const onFulfilledC = jest.fn()
+      const onFulfilledD = jest.fn()
 
       await new Promise(resolve => {
         new MyPromise((resolve) => {
@@ -58,57 +60,57 @@ describe('Test Promise polyfill', () => {
             resolve('result a')
           }, 0)
         }).then(result => {
-          onFullfilledA(result)
+          onFulfilledA(result)
           return new MyPromise(resolve => {
             setTimeout(() => {
               resolve('result b')
             }, 0)
           })
         }).then(result => {
-          onFullfilledB(result)
+          onFulfilledB(result)
           return new MyPromise(resolve => {
             resolve('result c')
           })
         }).then(result => {
-          onFullfilledC(result)
+          onFulfilledC(result)
           return 'result d'
         }).then(result => {
-          onFullfilledD(result)
+          onFulfilledD(result)
           resolve()
         })
       })
 
-      expect(onFullfilledA).toBeCalledWith('result a')
-      expect(onFullfilledB).toBeCalledWith('result b')
-      expect(onFullfilledC).toBeCalledWith('result c')
-      expect(onFullfilledD).toBeCalledWith('result d')
+      expect(onFulfilledA).toBeCalledWith('result a')
+      expect(onFulfilledB).toBeCalledWith('result b')
+      expect(onFulfilledC).toBeCalledWith('result c')
+      expect(onFulfilledD).toBeCalledWith('result d')
     })
 
-    // it('Test catch-then', async function () {
-    //   const onFullfilled = jest.fn()
-    //   const onRejected = jest.fn()
-    //   const err = new Error('error a')
-    //
-    //   await new Promise(resolve => {
-    //     new MyPromise((resolve, reject) => {
-    //       reject(err)
-    //     }).catch(e => {
-    //       onRejected(e)
-    //       return new MyPromise(resolve => {
-    //         resolve('result a')
-    //       })
-    //     }).then(result => {
-    //       onFullfilled(result)
-    //       resolve()
-    //     })
-    //   })
-    //
-    //   expect(onFullfilled).toBeCalledWith('result a')
-    //   expect(onRejected).toBeCalledWith(err)
-    // })
+    it('Test catch-then', async function () {
+      const onFulfilled = jest.fn()
+      const onRejected = jest.fn()
+      const err = new Error('error a')
+
+      await new Promise(resolve => {
+        new MyPromise((resolve, reject) => {
+          reject(err)
+        }).catch(e => {
+          onRejected(e)
+          return new MyPromise(resolve => {
+            resolve('result a')
+          })
+        }).then(result => {
+          onFulfilled(result)
+          resolve()
+        })
+      })
+
+      expect(onFulfilled).toBeCalledWith('result a')
+      expect(onRejected).toBeCalledWith(err)
+    })
 
     it('Test skip then but catch', async function () {
-      const onFullfilled = jest.fn()
+      const onFulfilled = jest.fn()
       const onRejected = jest.fn()
       const err = new Error('error a')
 
@@ -116,19 +118,21 @@ describe('Test Promise polyfill', () => {
         new MyPromise((resolve) => {
           throw err
         }).then(result => {
-          onFullfilled(result)
+          onFulfilled(result)
+        }).then(result => {
+          onFulfilled(result)
         }).catch(reason => {
           onRejected(reason)
           resolve()
         })
       })
 
-      expect(onFullfilled).toBeCalledTimes(0)
+      expect(onFulfilled).toBeCalledTimes(0)
       expect(onRejected).toBeCalledWith(err)
     })
 
     it('Test skip first then but catch by second then', async function () {
-      const onFullfilled = jest.fn()
+      const onFulfilled = jest.fn()
       const onRejected = jest.fn()
       const err = new Error('error a')
 
@@ -136,41 +140,132 @@ describe('Test Promise polyfill', () => {
         new MyPromise((resolve) => {
           throw err
         }).then(result => {
-          onFullfilled(result)
+          onFulfilled(result)
         }).then(null, reason => {
           onRejected(reason)
           resolve()
         })
       })
 
-      expect(onFullfilled).toBeCalledTimes(0)
+      expect(onFulfilled).toBeCalledTimes(0)
       expect(onRejected).toBeCalledWith(err)
     })
-  })
 
-  describe('Test Promise.all', () => {
-    it('Case fullfilled', async function () {
-      const promises = [
-        'a',
-        new MyPromise(resolve => resolve('b')),
-        new MyPromise(resolve => { setTimeout(() => resolve('c'), 0) })
-      ]
-      const result = await Promise.all(promises)
-      expect(result).toEqual(['a', 'b', 'c'])
+    it('Test then return promise A, and A has chain', async function () {
+      const fn1Layer2 = jest.fn()
+      const fn2Layer2 = jest.fn()
+      const fn1Layer1 = jest.fn()
+
+      await new Promise(resolve => {
+        new MyPromise((resolve) => {
+          setTimeout(() => {
+            resolve('layer1-1')
+          }, 5)
+        }).then(result => {
+          fn1Layer2(result)
+          return new MyPromise(resolve => {
+            setTimeout(() => {
+              resolve('layer2-1')
+            }, 5)
+          }).then(result => {
+            fn2Layer2(result)
+            return new MyPromise(resolve => {
+              setTimeout(() => {
+                resolve('layer2-2')
+              }, 5)
+            })
+          })
+        }).then(result => {
+          fn1Layer1(result)
+          resolve()
+        })
+      })
+      expect(fn1Layer2).toBeCalledWith('layer1-1')
+      expect(fn2Layer2).toBeCalledWith('layer2-1')
+      expect(fn1Layer1).toBeCalledWith('layer2-2')
     })
 
-    it('Case rejected', async function () {
-      const err = new Error('error')
-      const promises = [
-        'a',
-        new MyPromise(resolve => { throw err }),
-        new MyPromise(resolve => { setTimeout(() => resolve('c'), 0) })
-      ]
-      try {
-        await MyPromise.all(promises)
-      } catch (e) {
-        expect(err === e).toBeTruthy()
-      }
+    describe('Test Promise.all', () => {
+      it('Case fulfilled', async function () {
+        const promises = [
+          'a',
+          new MyPromise(resolve => resolve('b')),
+          new MyPromise(resolve => {
+            setTimeout(() => resolve('c'), 0)
+          })
+        ]
+        const result = await Promise.all(promises)
+        expect(result).toEqual(['a', 'b', 'c'])
+      })
+
+      it('Case rejected', async function () {
+        const err = new Error('error')
+        const promises = [
+          'a',
+          new MyPromise(resolve => {
+            throw err
+          }),
+          new MyPromise(resolve => {
+            setTimeout(() => resolve('c'), 0)
+          })
+        ]
+        try {
+          await MyPromise.all(promises)
+        } catch (e) {
+          expect(err === e).toBeTruthy()
+        }
+      })
+    })
+
+    describe('Test Promise.race', () => {
+      it('Case fulfilled', async function () {
+        const promises = [
+          'a',
+          new MyPromise(resolve => resolve('b')),
+          new MyPromise(resolve => {
+            setTimeout(() => resolve('c'), 0)
+          })
+        ]
+        const result = await Promise.race(promises)
+        expect(result).toEqual('a')
+      })
+
+      it('Case rejected', async function () {
+        const err = new Error('error')
+        const promises = [
+          'a',
+          new MyPromise(resolve => {
+            throw err
+          }),
+          new MyPromise(resolve => {
+            setTimeout(() => resolve('c'), 0)
+          })
+        ]
+        try {
+          await MyPromise.race(promises)
+        } catch (e) {
+          expect(err === e).toBeTruthy()
+        }
+      })
+    })
+
+    describe('Test Promise.resolve', () => {
+      it('Case fulfilled', async function () {
+        const result = await MyPromise.resolve('hello')
+        expect(result).toEqual('hello')
+      })
+    })
+
+    describe('Test Promise.reject', () => {
+      it('Case fulfilled', async function () {
+        let result = null
+        try {
+          result = await MyPromise.reject('hello')
+        } catch (err) {
+          expect(err).toEqual('hello')
+        }
+        expect(result).toBe(null)
+      })
     })
   })
 })
