@@ -95,6 +95,13 @@ MyPromise.prototype.catch = function (onRejected) {
   return this.then(undefined, onRejected)
 }
 
+MyPromise.prototype.finally = function (callback) {
+  return this.then(
+    value => Promise.resolve(callback()).then(() => value),
+    err => Promise.resolve(callback()).then(() => { throw err })
+  )
+}
+
 MyPromise.resolve = function (value) {
   return new MyPromise(resolve => resolve(value))
 }

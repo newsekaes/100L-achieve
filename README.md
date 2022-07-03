@@ -20,6 +20,11 @@ Promise API，以及`Promise.all`, `Promise.race` 等
 runPromiseByLimit: 同一时间只允许有限个promise运行  
 代码实现：[code/polyfill/promise/runPromiseByLimit.js](./code/polyfill/promise/runPromiseByLimit.js)
 
+### Prototype
+原型链-继承：[code/polyfill/prototype.js](./code/polyfill/prototype.js)
+
+### 装饰器
+
 ### Event
 事件监听与订阅分发
 [mitt](https://github.com/developit/mitt/blob/main/src/index.ts)

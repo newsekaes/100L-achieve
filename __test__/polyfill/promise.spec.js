@@ -185,87 +185,105 @@ describe('Test Promise polyfill', () => {
       expect(fn1Layer1).toBeCalledWith('layer2-2')
     })
 
-    describe('Test Promise.all', () => {
-      it('Case fulfilled', async function () {
-        const promises = [
-          'a',
-          new MyPromise(resolve => resolve('b')),
-          new MyPromise(resolve => {
-            setTimeout(() => resolve('c'), 0)
-          })
-        ]
-        const result = await Promise.all(promises)
-        expect(result).toEqual(['a', 'b', 'c'])
-      })
+    it('Test finally', async function () {
+      const finally1 = jest.fn()
+      const finally2 = jest.fn()
+      const finallyThen = jest.fn()
+      const finallyCatch = jest.fn()
 
-      it('Case rejected', async function () {
-        const err = new Error('error')
-        const promises = [
-          'a',
-          new MyPromise(resolve => {
-            throw err
-          }),
-          new MyPromise(resolve => {
-            setTimeout(() => resolve('c'), 0)
-          })
-        ]
-        try {
-          await MyPromise.all(promises)
-        } catch (e) {
-          expect(err === e).toBeTruthy()
-        }
+      await new Promise(resolve => {
+        MyPromise.resolve(1).finally(finally1).then(finallyThen).then(resolve)
       })
+      await new Promise(resolve => {
+        MyPromise.reject(2).finally(finally2).catch(finallyCatch).then(resolve)
+      })
+      expect(finally1).toBeCalledTimes(1)
+      expect(finally2).toBeCalledTimes(1)
+      expect(finallyThen).toBeCalledWith(1)
+      expect(finallyCatch).toBeCalledWith(2)
+    })
+  })
+
+  describe('Test Promise.all', () => {
+    it('Case fulfilled', async function () {
+      const promises = [
+        'a',
+        new MyPromise(resolve => resolve('b')),
+        new MyPromise(resolve => {
+          setTimeout(() => resolve('c'), 0)
+        })
+      ]
+      const result = await Promise.all(promises)
+      expect(result).toEqual(['a', 'b', 'c'])
     })
 
-    describe('Test Promise.race', () => {
-      it('Case fulfilled', async function () {
-        const promises = [
-          'a',
-          new MyPromise(resolve => resolve('b')),
-          new MyPromise(resolve => {
-            setTimeout(() => resolve('c'), 0)
-          })
-        ]
-        const result = await Promise.race(promises)
-        expect(result).toEqual('a')
-      })
+    it('Case rejected', async function () {
+      const err = new Error('error')
+      const promises = [
+        'a',
+        new MyPromise(resolve => {
+          throw err
+        }),
+        new MyPromise(resolve => {
+          setTimeout(() => resolve('c'), 0)
+        })
+      ]
+      try {
+        await MyPromise.all(promises)
+      } catch (e) {
+        expect(err === e).toBeTruthy()
+      }
+    })
+  })
 
-      it('Case rejected', async function () {
-        const err = new Error('error')
-        const promises = [
-          'a',
-          new MyPromise(resolve => {
-            throw err
-          }),
-          new MyPromise(resolve => {
-            setTimeout(() => resolve('c'), 0)
-          })
-        ]
-        try {
-          await MyPromise.race(promises)
-        } catch (e) {
-          expect(err === e).toBeTruthy()
-        }
-      })
+  describe('Test Promise.race', () => {
+    it('Case fulfilled', async function () {
+      const promises = [
+        'a',
+        new MyPromise(resolve => resolve('b')),
+        new MyPromise(resolve => {
+          setTimeout(() => resolve('c'), 0)
+        })
+      ]
+      const result = await Promise.race(promises)
+      expect(result).toEqual('a')
     })
 
-    describe('Test Promise.resolve', () => {
-      it('Case fulfilled', async function () {
-        const result = await MyPromise.resolve('hello')
-        expect(result).toEqual('hello')
-      })
+    it('Case rejected', async function () {
+      const err = new Error('error')
+      const promises = [
+        'a',
+        new MyPromise(resolve => {
+          throw err
+        }),
+        new MyPromise(resolve => {
+          setTimeout(() => resolve('c'), 0)
+        })
+      ]
+      try {
+        await MyPromise.race(promises)
+      } catch (e) {
+        expect(err === e).toBeTruthy()
+      }
     })
+  })
 
-    describe('Test Promise.reject', () => {
-      it('Case fulfilled', async function () {
-        let result = null
-        try {
-          result = await MyPromise.reject('hello')
-        } catch (err) {
-          expect(err).toEqual('hello')
-        }
-        expect(result).toBe(null)
-      })
+  describe('Test Promise.resolve', () => {
+    it('Case fulfilled', async function () {
+      const result = await MyPromise.resolve('hello')
+      expect(result).toEqual('hello')
+    })
+  })
+
+  describe('Test Promise.reject', () => {
+    it('Case fulfilled', async function () {
+      let result = null
+      try {
+        result = await MyPromise.reject('hello')
+      } catch (err) {
+        expect(err).toEqual('hello')
+      }
+      expect(result).toBe(null)
     })
   })
 })
