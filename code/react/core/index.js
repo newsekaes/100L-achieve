@@ -180,6 +180,15 @@ module.exports = function () {
     return [hook.state, setState]
   }
 
+  function useEffect (callback) {
+    const hook = {
+      in: callback,
+      out: null
+    }
+    wipFiber.hooks.push(hook)
+    hookIndex++
+  }
+
   function updateHostComponent (fiber) {
     if (!fiber.dom) {
       fiber.dom = createDom(fiber)
@@ -274,6 +283,16 @@ module.exports = function () {
     if (fiber.effectTag !== 'DELETION') commitWork(fiber.child)
     // commitWork(fiber.child)
     commitWork(fiber.sibling)
+    if (typeof fiber.type === 'function') {
+      if (fiber.effectTag === 'PLACEMENT') {
+        runEffect(fiber)
+      } else if (fiber.effectTag === 'DELETION') {
+        unmountEffect(fiber)
+      } else if (fiber.effectTag === 'UPDATE') {
+        unmountEffect(fiber)
+        runEffect(fiber)
+      }
+    }
   }
 
   function commitDeletion (fiber, domParent) {
@@ -282,6 +301,21 @@ module.exports = function () {
     } else {
       commitDeletion(fiber.child, domParent)
     }
+  }
+
+  function runEffect (fiber) {
+    if (!fiber.hooks) return
+    fiber.hooks.filter(i => i.in).forEach(hook => {
+      const result = hook.in()
+      if (typeof result === 'function') {
+        hook.out = result
+      }
+    })
+  }
+
+  function unmountEffect (fiber) {
+    if (!fiber.hooks) return
+    fiber.hooks.filter(i => i.out).forEach(hook => hook.out())
   }
 
   function render (element, container) {
@@ -300,6 +334,7 @@ module.exports = function () {
   return {
     render,
     createElement,
-    useState
+    useState,
+    useEffect
   }
 }

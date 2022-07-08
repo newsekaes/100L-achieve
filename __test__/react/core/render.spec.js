@@ -234,6 +234,27 @@ describe('Test MyReactDOM render feature', () => {
           await nextTick()
           expect(root.innerHTML).toEqual('<div>2</div>')
         })
+        it('UseEffect ok', async function () {
+          const fnIn = jest.fn()
+          const fnOut = jest.fn()
+          const App = () => {
+            MyReact.useEffect(() => {
+              fnIn()
+              return fnOut
+            })
+            return MyReact.createElement('div', {}, '')
+          }
+          const vnode1 = MyReact.createElement(App, {})
+          MyReact.render(vnode1, root)
+          await nextTick()
+          expect(fnIn).toBeCalledTimes(1)
+          expect(fnOut).toBeCalledTimes(0)
+          const vnode2 = MyReact.createElement('div', {})
+          MyReact.render(vnode2, root)
+          await nextTick()
+          expect(fnIn).toBeCalledTimes(1)
+          expect(fnOut).toBeCalledTimes(1)
+        })
       })
     })
   })
