@@ -54,6 +54,7 @@ runPromiseByLimit: 同一时间只允许有限个promise运行
 ### Router
 
 ### Redux
+代码实现：[code/react/redux/index.js](./code/react/redux/index.js)
 
 ## 4. Vue
 
